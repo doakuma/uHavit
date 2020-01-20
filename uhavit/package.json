@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/core": "^10.0.27",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
@@ -36,9 +37,9 @@
   },
   "devDependencies": {
     "@storybook/addon-actions": "^5.3.2",
+    "@storybook/addon-docs": "^5.3.6",
     "@storybook/addon-knobs": "^5.3.2",
     "@storybook/addon-links": "^5.3.2",
-    "@storybook/addon-notes": "^5.3.2",
     "@storybook/addons": "^5.3.2",
     "@storybook/preset-create-react-app": "^1.5.1",
     "@storybook/react": "^5.3.2"
