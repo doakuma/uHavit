@@ -1,17 +1,22 @@
 /** @jsx jsx */
 import {jsx, css} from '@emotion/core';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-/** `Button` 컴포넌트는 어떠한 작업을 트리거 할 때 사용합니다.  */
-const Button = ({btnType, btnText, btnTheme, btnState}) => {
-    return(
-        <button
-            css={[style, theme[btnTheme]]}
-            type={btnType}
-            disabled={btnState}
-        >{btnText}</button>
-    )
+class Button extends Component {
+  render() {
+    /** `Button` 컴포넌트는 어떠한 작업을 트리거 할 때 사용합니다.  */
+    const {btnType, btnText, btnTheme, btnState} = this.props;
+      return(
+          <button
+              css={[style, theme[btnTheme]]}
+              type={btnType}
+              disabled={btnState}
+          >{btnText}</button>
+      )
+    }
 }
+
 
 Button.propTypes = {
     /**
