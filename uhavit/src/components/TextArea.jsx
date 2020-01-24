@@ -7,6 +7,7 @@ const TextArea = (props) => {
         <div className="form-group">
             <label htmlFor={props.name} className="form-label">{props.title}</label>
             <textarea
+                css={style}
                 className="form-control"
                 name={props.name}
                 rows={props.rows}
@@ -18,5 +19,10 @@ const TextArea = (props) => {
         </div>
     )
 }
+
+const style = css`
+    padding: 5px 10px;
+    border: 1px solid #ececec
+`;
 
 export default TextArea;

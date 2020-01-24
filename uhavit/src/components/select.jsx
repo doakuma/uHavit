@@ -7,6 +7,7 @@ const Select = (props) => {
         <div className="form-group">
             <label htmlFor={props.name}>{props.title}</label>
             <select
+                css={style}
                 name={props.name}
                 value={props.value}
                 onChange={props.handleChange}
@@ -25,5 +26,10 @@ const Select = (props) => {
         </div>
     )
 }
+
+const style = css`
+    padding: 5px 10px;
+    border: 1px solid #ececec
+`;
 
 export default Select;
