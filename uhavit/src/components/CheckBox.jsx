@@ -1,4 +1,7 @@
+/** @jsx jsx */
+import { jsx, css } from '@emotion/core';
 import React, { Fragment } from 'react';
+import PropTypes from 'prop-types';
 
 const Checkbox = (props) => {
     return(
@@ -23,6 +26,14 @@ const Checkbox = (props) => {
             </div>
         </Fragment>
     )
+}
+
+Checkbox.propTypes = {
+    title: PropTypes.string,
+    options: PropTypes.array,
+    name: PropTypes.string,
+    handleChange: PropTypes.func,
+    selectedOptions: PropTypes.object
 }
 
 export default Checkbox;

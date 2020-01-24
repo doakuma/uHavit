@@ -1,4 +1,6 @@
-import React from 'react';
+/** @jsx jsx */
+import { jsx, css } from '@emotion/core';
+import PropTypes from 'prop-types';
 
 const TextArea = (props) => {
     return(

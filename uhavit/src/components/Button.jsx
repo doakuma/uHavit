@@ -1,4 +1,6 @@
-import React from 'react';
+/** @jsx jsx */
+import { jsx, css } from '@emotion/core';
+import PropTypes from 'prop-types';
 
 const Button = (props) => {
     return(
@@ -9,6 +11,14 @@ const Button = (props) => {
             {props.title}
         </button>
     )
+}
+
+Button.propTypes = {
+    /** className 설정  */
+    type: PropTypes.string,
+    style: PropTypes.array,
+    action: PropTypes.func,
+    title: PropTypes.string
 }
 
 export default Button;
