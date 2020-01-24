@@ -1,5 +1,5 @@
 import React from 'react';
-import Input from '../components/Input.jsx';
+import Input from '../components/Input';
 import { withKnobs, text } from '@storybook/addon-knobs';
 
 export default {

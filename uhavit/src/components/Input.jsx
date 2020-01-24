@@ -2,6 +2,7 @@
 import { jsx, css } from '@emotion/core';
 import PropTypes from 'prop-types';
 
+/** Input */
 const Input = (props) => {
     return(
         <div className="form-group">
@@ -19,6 +20,7 @@ const Input = (props) => {
         </div>
     )
 }
+
 Input.propTypes = {
     name: PropTypes.string,
     title: PropTypes.string,
@@ -30,6 +32,7 @@ Input.propTypes = {
 }
 
 Input.defaultProps = {
+    title: 'Input',
     type: 'text',
     placeholder: 'please input'
 }

@@ -35,5 +35,9 @@ Checkbox.propTypes = {
     handleChange: PropTypes.func,
     selectedOptions: PropTypes.object
 }
+Checkbox.defaultProps = {
+    options: ['a','b','c'],
+    selectedOptions: ['a']
+}
 
 export default Checkbox;

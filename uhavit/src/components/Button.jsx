@@ -2,6 +2,7 @@
 import { jsx, css } from '@emotion/core';
 import PropTypes from 'prop-types';
 
+/** 버튼 */
 const Button = (props) => {
     return(
         <button
