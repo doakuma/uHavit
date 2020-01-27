@@ -27,6 +27,19 @@ const Select = (props) => {
     )
 }
 
+Select.propTypes = {
+    title: PropTypes.string,
+    name: PropTypes.string,
+    value: PropTypes.string,
+    handleChange: PropTypes.func,
+    placeholder: PropTypes.string,
+    options: PropTypes.array
+}
+Select.defaultProps = {
+    placeholder: 'Choose...',
+    options: ['a','b','c']
+}
+
 const style = css`
     padding: 5px 10px;
     border: 1px solid #ececec

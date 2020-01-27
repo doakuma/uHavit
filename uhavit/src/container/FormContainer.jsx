@@ -29,8 +29,12 @@ class FormContainer extends Component {
         this.handleTextArea = this.handleTextArea.bind(this)
     }
 
-    handleFormSubmit() {
+    handleFormSubmit(e) {
+        e.preventDefault();
+        let userData = this.state.newUser;
 
+        fetch()
+        .then()
     }
     handleClearForm(e) {
         e.preventDefault();

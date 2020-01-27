@@ -3,6 +3,7 @@ import { jsx, css } from '@emotion/core';
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 
+/** Checkbox */
 const Checkbox = (props) => {
     return(
         <Fragment>
@@ -33,7 +34,7 @@ Checkbox.propTypes = {
     options: PropTypes.array,
     name: PropTypes.string,
     handleChange: PropTypes.func,
-    selectedOptions: PropTypes.object
+    selectedOptions: PropTypes.array
 }
 Checkbox.defaultProps = {
     options: ['a','b','c'],
