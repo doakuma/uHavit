@@ -5,6 +5,11 @@ import {
   Route,
   Link
 } from 'react-router-dom';
+
+import Wrapper from './container/Wrapper';
+import Header from './container/Header';
+import Footer from './container/Footer';
+
 import Intro from './view/Intro/Intro';
 import SignUp from './view/SignUp/signup';
 import LogIn from './view/LogIn/login';
@@ -15,16 +20,19 @@ import UNow from './view/uNow/uNow'
 class App extends Component {
   render() {
     return (
+      <Wrapper>
       <Router>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/Intro">Intro</Link>
-          <Link to="/SignUp">SignUp</Link>
-          <Link to="/LogIn">LogIn</Link>
-          <Link to="/USetting">USetting</Link>
-          <Link to="/UMake">UMake</Link>
-          <Link to="/UNow">UNow</Link>
-        </nav>
+        <Header>
+          <nav>
+            <Link to="/">Home</Link>
+            <Link to="/Intro">Intro</Link>
+            <Link to="/SignUp">SignUp</Link>
+            <Link to="/LogIn">LogIn</Link>
+            <Link to="/USetting">USetting</Link>
+            <Link to="/UMake">UMake</Link>
+            <Link to="/UNow">UNow</Link>
+          </nav>
+        </Header>
  
         <Switch>
         <Route path="/Intro">
@@ -46,7 +54,9 @@ class App extends Component {
           <UNow></UNow>
         </Route>
         </Switch>
+        <Footer/>
       </Router>
+      </Wrapper>
     );
   }
 }

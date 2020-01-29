@@ -83,18 +83,7 @@ class FormContainer extends Component {
         return(
             
             <form className="container" onSubmit={this.handleClearForm}>
-                <dl>
-                <dt>Name: </dt>
-                <dd>{this.state.newUser.name}</dd>
-                <dt>Age: </dt>
-                <dd>{this.state.newUser.age}</dd>
-                <dt>Gender: </dt>
-                <dd>{this.state.newUser.gender}</dd>
-                <dt>Skills</dt>
-                <dd>{this.state.newUser.skills}</dd>
-                <dt>About: </dt>
-                <dd>{this.state.newUser.about}</dd>
-                </dl>
+                
                 <Input
                     type={'text'}
                     title={'Full Name'}

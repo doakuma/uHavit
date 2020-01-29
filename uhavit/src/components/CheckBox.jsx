@@ -1,13 +1,12 @@
 /** @jsx jsx */
 import { jsx, css } from '@emotion/core';
-import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 
 /** Checkbox */
 const Checkbox = (props) => {
     return(
-        <Fragment>
-            <label htmlFor="props.name" className="form-label">{props.title}</label>
+        <div className="form-group">
+            <label htmlFor={props.name} className="form-label">{props.title}</label>
             <div className="checkbox-group">
                 {props.options.map((option, idx) => {
                     return(
@@ -25,7 +24,7 @@ const Checkbox = (props) => {
                     )
                 })}
             </div>
-        </Fragment>
+        </div>
     )
 }
 

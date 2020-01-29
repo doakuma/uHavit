@@ -1,11 +1,10 @@
 import React, { Component }from 'react';
+import Container from '../../container/Container';
 
 class Intro extends Component {
     render() {
         return(
-            <div className="Intro">
-            
-            </div>
+            <Container>Intro</Container>
         )
     }
 }

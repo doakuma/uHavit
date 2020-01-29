@@ -1,11 +1,12 @@
 import React, { Component }from 'react';
+import Container from '../../container/Container';
 
 class UMake extends Component {
     render() {
         return(
-            <div>
+            <Container>
             UMake
-            </div>
+            </Container>
         )
     }
 }

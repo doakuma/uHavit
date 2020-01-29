@@ -1,15 +1,24 @@
 import React, { Component }from 'react';
+import Container from '../../container/Container';
+import Title from '../../components/Title';
+import Input from '../../components/Input';
+import Select from '../../components/select';
+import CheckBox from '../../components/CheckBox';
+import TextArea from '../../components/TextArea';
+import Button from '../../components/Button.jsx';
 import FormContainer from '../../container/FormContainer';
 
-class SignUp extends Component {
-    render() {
-        return(
-            <div className="container">
-                <h3>Form Container</h3>
-                <FormContainer/>
-            </div>
-        )
-    }
+const SignUp = (props) => {
+    return(
+        <Container>
+            <Title
+                level="3"
+                text="Sign Up"
+            />
+            <FormContainer/>
+        </Container>
+    )
+
 }
 
 export default SignUp;

@@ -9,14 +9,14 @@ export default {
   decorators: [withKnobs]
 };
 
-export const basic = () => <Button btnType="button" btnText="확인"></Button>
+export const basic = () => <Button/>
 
 export const primary = () => {
   return(
     <Button
       btnType="button"
-      btnTheme="primary"
-      btnText="Primary"
+      theme="primary"
+      title="Primary"
     />
   )
 }
