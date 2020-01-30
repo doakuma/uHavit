@@ -27,7 +27,6 @@ const LogIn = () => {
 
     const confirmLogin = (e) => {
         e.preventDefault();
-        console.log(userInfo)
     }
     return(
         <Container>
