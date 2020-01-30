@@ -40,6 +40,7 @@ Input.defaultProps = {
 const style = css`
     padding: 5px 10px;
     border: 1px solid #ececec;
+    color: #fff;
 `
 
 export default Input;

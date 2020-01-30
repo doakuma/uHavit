@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 const Button = (props) => {
     return(
         <button
-            btnType={props.type}
+            type={props.type}
             css={[style, themes[props.theme]]}
             onClick={props.action}>
             {props.title}

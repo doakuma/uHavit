@@ -12,7 +12,7 @@ const SignUp = (props) => {
     return(
         <Container>
             <Title
-                level="3"
+                level={2}
                 text="Sign Up"
             />
             <FormContainer/>
