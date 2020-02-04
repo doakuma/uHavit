@@ -40,7 +40,7 @@ const USetting = () => {
                     name="uWant"
                     type="text"
                     value={setInfo.uWant}
-                    handleChang={updateField}
+                    handleChange={updateField}
                     placeholder="Write What U want"
                 />
                 <Input
@@ -49,7 +49,7 @@ const USetting = () => {
                     name="uFreq"
                     type="number"
                     value={setInfo.uFreq}
-                    handleChang={updateField}
+                    handleChange={updateField}
                     placeholder="Write How U want"
                 />
                 <Input
@@ -58,7 +58,7 @@ const USetting = () => {
                     name="uWhen"
                     type="number"
                     value={setInfo.uWhen}
-                    handleChang={updateField}
+                    handleChange={updateField}
                     placeholder="Write When U want"
                 />
                 <Button 
