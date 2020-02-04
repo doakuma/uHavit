@@ -2,7 +2,7 @@ import React, { useState }from 'react';
 import Container from '../../container/Container';
 import Title from '../../components/Title';
 import Input from '../../components/Input';
-import Button from '../../components/Button.jsx';
+import Button from '../../components/Button';
 
 
 const LogIn = () => {
@@ -27,6 +27,7 @@ const LogIn = () => {
 
     const confirmLogin = (e) => {
         e.preventDefault();
+        console.log(userInfo)
     }
     return(
         <Container>

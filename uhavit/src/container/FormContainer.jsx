@@ -5,7 +5,7 @@ import Input from '../components/Input';
 import Select from '../components/select';
 import CheckBox from '../components/CheckBox';
 import TextArea from '../components/TextArea';
-import Button from '../components/Button.jsx';
+import Button from '../components/Button';
 
 class FormContainer extends Component {
     constructor(props) {

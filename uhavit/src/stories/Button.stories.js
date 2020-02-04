@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '../components/Button.jsx'
+import Button from '../components/Button'
 import { withKnobs, text, radios, boolean } from "@storybook/addon-knobs";
 
 
