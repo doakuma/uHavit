@@ -21,7 +21,7 @@ Button.propTypes = {
     theme: PropTypes.string,
     /** Button onClick function */
     action: PropTypes.func,
-    /** Button Text */
+    /** Button Text string */
     title: PropTypes.string
 }
 

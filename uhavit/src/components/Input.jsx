@@ -5,10 +5,9 @@ import PropTypes from 'prop-types';
 /** Input */
 const Input = (props) => {
     return(
-        <div className="form-group">
+        <div css={style}>
             <label htmlFor={props.name} className="form-label">{props.title}</label>
             <input
-                css={style}
                 className="form-input"
                 id={props.id}
                 name={props.name}
@@ -38,9 +37,16 @@ Input.defaultProps = {
 }
 
 const style = css`
-    padding: 5px 10px;
-    border: 1px solid #ececec;
-    color: #fff;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 5px 0;
+
+    & input {
+        padding: 5px 10px;
+        border: 1px solid #ececec;
+        color: #fff;
+    }
 `
 
 export default Input;

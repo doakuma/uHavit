@@ -1,4 +1,6 @@
-import React, { useState }from 'react';
+/** @jsx jsx */
+import React, { useState } from 'react';
+import { jsx, css } from '@emotion/core';
 import Container from '../../container/Container';
 import Title from '../../components/Title';
 import Input from '../../components/Input';
@@ -25,7 +27,7 @@ const USetting = () => {
         })
     }
 
-    const confirmLogin = (e) => {
+    const confirmSetup = (e) => {
         e.preventDefault();
         console.log(setInfo)
     }
@@ -33,7 +35,9 @@ const USetting = () => {
         <Container>
             <Title level={2} text="uSetting"/>
 
-            <form>
+            <form 
+                onSubmit={confirmSetup}
+                css={setStyle}>
                 <Input
                     title="What U want"
                     id="uWant"
@@ -70,5 +74,27 @@ const USetting = () => {
     )
 
 }
+
+const setStyle = css`
+
+    & div {
+        margin: 20px 0 0;
+        justify-content: center;
+
+        &:first-child {
+            margin: 0;
+        }
+    }
+    & label {
+        display: block;
+        width: 100%;
+        margin: 0 0 10px;
+        text-align: center;
+    }
+    & button {
+        margin: 20px 0 0;
+        width: 100%;
+    }
+`;
 
 export default USetting;
