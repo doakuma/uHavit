@@ -7,12 +7,6 @@ import { CheckinForm } from '@components/habits/CheckinForm';
 import { HabitCalendar } from '@components/habits/HabitCalendar';
 import { CheckinHistory } from '@components/habits/CheckinHistory';
 import { HabitTrend } from '@components/habits/HabitTrend';
-import { HabitAIFeedback } from '@components/habits/HabitAIFeedback';
-import { MotivationalMessage } from '@components/habits/MotivationalMessage';
-import { HabitAIChatWidget } from '@components/habits/HabitAIChatWidget';
-import { PatternAnalysis } from '@components/habits/PatternAnalysis';
-import { HabitSuggestions } from '@components/habits/HabitSuggestions';
-import { PredictionAnalysis } from '@components/habits/PredictionAnalysis';
 import { Modal } from '@components/common/Modal';
 import { Button } from '@components/common/Button';
 import { CATEGORY_LABELS, FREQUENCY_LABELS } from '@constants';
@@ -103,7 +97,6 @@ function HabitDetail() {
           {/* 체크인 섹션 */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>오늘의 체크인</h2>
-            <MotivationalMessage stats={stats} habit={habit} todayCheckin={todayCheckin} />
             <div className={styles.checkinCard}>
               {todayCheckin ? (
                 <div className={styles.checkinStatus}>
@@ -142,10 +135,7 @@ function HabitDetail() {
           {/* 통계 섹션 */}
           {stats && (
             <div className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>통계</h2>
-                <HabitAIFeedback habit={habit} stats={stats} checkins={checkins} />
-              </div>
+              <h2 className={styles.sectionTitle}>통계</h2>
               <div className={styles.statsGrid}>
                 <div className={styles.statCard}>
                   <div className={styles.statValue}>{stats.successRate}%</div>
@@ -172,7 +162,6 @@ function HabitDetail() {
                   <div className={styles.statLabel}>월간 성공률</div>
                 </div>
               </div>
-              <PredictionAnalysis habit={habit} stats={stats} />
             </div>
           )}
 
@@ -180,7 +169,6 @@ function HabitDetail() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>주간 트렌드</h2>
             <HabitTrend habit={habit} days={30} />
-            <PatternAnalysis checkins={checkins} />
           </div>
 
           {/* 체크인 기록 섹션 */}
@@ -197,20 +185,6 @@ function HabitDetail() {
             <h2 className={styles.sectionTitle}>캘린더</h2>
             <HabitCalendar habit={habit} />
           </div>
-
-          {/* 개선 제안 섹션 */}
-          {stats && (
-            <HabitSuggestions
-              habit={habit}
-              stats={stats}
-              checkins={checkins}
-              onApplySuggestion={(suggestion) => {
-                // 제안 적용 로직 (나중에 구현)
-                console.log('제안 적용:', suggestion);
-                alert('제안 적용 기능은 곧 추가될 예정입니다.');
-              }}
-            />
-          )}
 
           {/* 기본 정보 섹션 */}
           <div className={styles.section}>
@@ -248,9 +222,6 @@ function HabitDetail() {
               </div>
             </div>
           </div>
-
-          {/* AI 채팅 위젯 */}
-          <HabitAIChatWidget habit={habit} stats={stats} checkins={checkins} />
         </div>
       </div>
 
