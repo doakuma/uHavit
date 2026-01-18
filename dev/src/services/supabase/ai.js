@@ -1,7 +1,6 @@
 import { supabase } from './client';
 import { getHabits } from './habits';
 import { getCheckins } from './checkins';
-import * as dummyData from '../data/dummyData';
 
 // 더미 모드 활성화 여부
 const USE_DUMMY_MODE =
@@ -10,6 +9,10 @@ const USE_DUMMY_MODE =
 
 // Edge Function 사용 여부 (환경 변수로 제어)
 const USE_EDGE_FUNCTION = import.meta.env.VITE_USE_AI_EDGE_FUNCTION === 'true';
+
+// AI API 제공자 선택 (openai, gemini) - 기본값: openai
+const AI_PROVIDER = import.meta.env.VITE_AI_PROVIDER || 'openai';
+
 
 /**
  * AI와 채팅하는 함수
@@ -28,8 +31,7 @@ export async function chatWithAI(message, conversationHistory = []) {
     ];
     const response = dummyResponses[Math.floor(Math.random() * dummyResponses.length)];
     
-    // 더미 대화 기록 저장
-    const userId = dummyData.getCurrentUserId();
+    // 더미 대화 기록 (실제 저장하지 않음)
     const userMsgId = `msg-${Date.now()}`;
     const assistantMsgId = `msg-${Date.now() + 1}`;
     
@@ -60,7 +62,10 @@ export async function chatWithAI(message, conversationHistory = []) {
     }
   }
 
-  // 클라이언트에서 직접 OpenAI API 호출
+  // 클라이언트에서 직접 AI API 호출
+  if (AI_PROVIDER === 'gemini') {
+    return await chatWithGemini(message, user.id, conversationHistory);
+  }
   return await chatWithAIDirect(message, user.id, conversationHistory);
 }
 
@@ -78,6 +83,131 @@ async function chatWithAIEdgeFunction(message, userId, conversationHistory = [])
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * Google Gemini API를 통한 AI 채팅 (무료 티어 제공)
+ * @param {string} message - 사용자 메시지
+ * @param {string} userId - 사용자 ID
+ * @param {Array} conversationHistory - 대화 기록
+ * @returns {Promise<{ response: string, userMessageId: string, assistantMessageId: string }>}
+ */
+async function chatWithGemini(message, userId, conversationHistory = []) {
+  // Gemini API 키 확인
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      'Gemini API 키가 설정되지 않았습니다.\n' +
+      '.env.local 파일에 VITE_GEMINI_API_KEY를 추가하세요.\n' +
+      '무료로 사용 가능합니다: https://aistudio.google.com/app/apikey'
+    );
+  }
+
+  // 사용자 컨텍스트 조회
+  const habits = await getHabits();
+  const recentCheckins = await getRecentCheckins(habits);
+
+  // System 프롬프트 생성
+  const systemPrompt = createSystemPrompt(habits, recentCheckins);
+
+  // Gemini API는 system 메시지를 지원하지 않으므로 첫 번째 사용자 메시지에 포함
+  const conversationMessages = conversationHistory.map((msg) => ({
+    role: msg.message_type === 'user' ? 'user' : 'model',
+    parts: [{ text: msg.content }],
+  }));
+
+  // Gemini API 요청 형식
+  const requestBody = {
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            text: `${systemPrompt}\n\n사용자: ${message}`,
+          },
+        ],
+      },
+      ...conversationMessages,
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 500,
+    },
+  };
+
+  // Gemini API 호출
+  // 사용 가능한 모델: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash 등
+  // v1beta API 사용 (일부 모델은 v1에서 지원하지 않을 수 있음)
+  // 기본값: gemini-2.5-flash (무료 티어에 적합하고 빠름)
+  const modelName = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
+  const apiVersion = import.meta.env.VITE_GEMINI_API_VERSION || 'v1beta';
+  
+  // API 엔드포인트 (REST API 형식)
+  const apiUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models/${modelName}:generateContent?key=${apiKey}`;
+  
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error?.message || 'Gemini API 호출 실패';
+
+    if (response.status === 429) {
+      throw new Error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요. (Rate Limit 초과)');
+    } else if (response.status === 400 || response.status === 404) {
+      // 모델을 찾을 수 없는 경우 도움말 제공
+      if (errorMessage.includes('not found') || errorMessage.includes('not supported')) {
+        throw new Error(
+          `모델 '${modelName}'을 찾을 수 없습니다.\n` +
+          `사용 가능한 모델: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash, gemini-2.0-flash-lite\n` +
+          `.env.local에서 VITE_GEMINI_MODEL을 변경하세요.\n` +
+          `예: VITE_GEMINI_MODEL=gemini-2.5-flash`
+        );
+      }
+      throw new Error(`Gemini API 오류: ${errorMessage}`);
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const data = await response.json();
+  const aiResponse = data.candidates[0]?.content?.parts[0]?.text || '응답을 생성할 수 없습니다.';
+
+  // 대화 기록 저장
+  const { data: userMsg, error: userError } = await supabase
+    .from('ai_conversations')
+    .insert({
+      user_id: userId,
+      message_type: 'user',
+      content: message,
+    })
+    .select()
+    .single();
+
+  if (userError) throw userError;
+
+  const { data: assistantMsg, error: assistantError } = await supabase
+    .from('ai_conversations')
+    .insert({
+      user_id: userId,
+      message_type: 'assistant',
+      content: aiResponse,
+    })
+    .select()
+    .single();
+
+  if (assistantError) throw assistantError;
+
+  return {
+    response: aiResponse,
+    userMessageId: userMsg.id,
+    assistantMessageId: assistantMsg.id,
+  };
 }
 
 /**
