@@ -443,6 +443,61 @@ ${recentCheckins.length > 0 ? JSON.stringify(recentCheckins.slice(0, 20), null, 
 }
 
 /**
+ * 특정 습관에 대한 AI 피드백 요청
+ * @param {string} habitId - 습관 ID
+ * @param {Object} habitStats - 습관 통계 데이터
+ * @param {Array} checkins - 체크인 배열
+ * @returns {Promise<string>} AI 피드백 응답
+ */
+export async function getHabitFeedback(habitId, habitStats, checkins = []) {
+  // 습관 데이터 조회
+  const { getHabit } = await import('./habits');
+  const habit = await getHabit(habitId);
+  
+  if (!habit) {
+    throw new Error('습관을 찾을 수 없습니다.');
+  }
+
+  // 통계 데이터 기반 프롬프트 생성
+  const feedbackPrompt = `다음 습관의 통계를 분석하고 격려와 개선 제안을 포함한 피드백을 제공해주세요:
+
+습관 정보:
+- 이름: ${habit.name}
+${habit.description ? `- 설명: ${habit.description}` : ''}
+- 카테고리: ${habit.category || '없음'}
+- 빈도: ${habit.frequency_type} ${habit.frequency_value}회
+${habit.target_value ? `- 목표: ${habit.target_value} ${habit.target_unit || ''}` : ''}
+
+통계 데이터:
+- 전체 성공률: ${habitStats.successRate}%
+- 현재 연속 일수: ${habitStats.streak}일
+- 최고 연속 일수: ${habitStats.maxStreak}일
+- 완료 횟수: ${habitStats.completedCount}회
+- 전체 기록 수: ${habitStats.totalCount}회
+- 주간 성공률: ${habitStats.weeklySuccessRate}%
+- 월간 성공률: ${habitStats.monthlySuccessRate}%
+
+최근 체크인 기록 (최근 30일):
+${checkins.length > 0 ? JSON.stringify(checkins.slice(-30).map(c => ({
+  date: c.checkin_date,
+  completed: c.is_completed,
+  value: c.value,
+})), null, 2) : '최근 기록이 없습니다.'}
+
+다음 형식으로 답변해주세요:
+1. 현재 성과에 대한 격려 (1-2문장)
+2. 잘하고 있는 점 (1-2문장)
+3. 개선할 수 있는 점 (1-2문장)
+4. 구체적인 조언 (1-2문장)
+
+친근하고 격려하는 톤으로 작성해주세요.`;
+
+  // AI 채팅 함수 호출 (세션 없이 일회성 요청)
+  const result = await chatWithAI(feedbackPrompt, [], null);
+  return result.response;
+}
+
+/**
  * 대화 기록 조회 (세션별)
  * @param {string} sessionId - 세션 ID (null이면 모든 메시지)
  * @param {number} limit - 조회할 메시지 수 (기본값: 100)

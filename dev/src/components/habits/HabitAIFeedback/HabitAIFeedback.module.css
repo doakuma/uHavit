@@ -1,0 +1,48 @@
+.feedbackButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.feedbackContent {
+  min-height: 200px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-2xl);
+  color: var(--text-secondary);
+}
+
+.error {
+  padding: var(--spacing-lg);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-error);
+}
+
+.error p {
+  margin: 0;
+  color: var(--color-error);
+}
+
+.feedback {
+  padding: var(--spacing-lg);
+}
+
+.feedbackText {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.feedbackText p {
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.feedbackText p:last-child {
+  margin-bottom: 0;
+}

@@ -68,6 +68,14 @@
   margin: 0;
 }
 
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
 .titleRow {
   display: flex;
   align-items: center;

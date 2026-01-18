@@ -1,0 +1,1 @@
+export { PatternAnalysis } from './PatternAnalysis';

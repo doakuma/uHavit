@@ -1,0 +1,1 @@
+export { MotivationalMessage } from './MotivationalMessage';
