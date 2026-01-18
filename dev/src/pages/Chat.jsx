@@ -1,25 +1,38 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useAIChat } from '@hooks/useAIChat';
 import styles from './Chat.module.css';
 
 function Chat() {
-  const [messages] = useState([
-    {
-      id: 1,
-      type: 'assistant',
-      content: '안녕하세요! 습관 형성을 도와드리는 AI 코치입니다. 어떤 도움이 필요하신가요?',
-    },
-    {
-      id: 2,
-      type: 'user',
-      content: '운동 습관을 만들고 싶어요',
-    },
-    {
-      id: 3,
-      type: 'assistant',
-      content:
-        '좋은 습관이네요! 운동 습관을 만들 때는 작은 목표부터 시작하는 것이 좋습니다. 예를 들어, 처음에는 주 3회 20분씩 시작해서 점진적으로 늘려가는 방식이 효과적입니다. 어떤 종류의 운동을 생각하고 계신가요?',
-    },
-  ]);
+  const [inputMessage, setInputMessage] = useState('');
+  const messagesEndRef = useRef(null);
+  const { messages, sendMessage, isLoading, error } = useAIChat();
+
+  // 메시지가 추가될 때마다 스크롤을 맨 아래로
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!inputMessage.trim() || isLoading) return;
+
+    const message = inputMessage;
+    setInputMessage('');
+    await sendMessage(message);
+  };
+
+  // 초기 환영 메시지 (대화 기록이 없을 때만)
+  const displayMessages =
+    messages.length === 0
+      ? [
+          {
+            id: 'welcome',
+            type: 'assistant',
+            content: '안녕하세요! 습관 형성을 도와드리는 AI 코치입니다. 어떤 도움이 필요하신가요?',
+            createdAt: new Date().toISOString(),
+          },
+        ]
+      : messages;
 
   return (
     <div className={styles.container}>
@@ -30,7 +43,7 @@ function Chat() {
 
       <div className={styles.chatContainer}>
         <div className={styles.messages}>
-          {messages.map((message) => (
+          {displayMessages.map((message) => (
             <div
               key={message.id}
               className={`${styles.message} ${message.type === 'user' ? styles.userMessage : styles.assistantMessage}`}
@@ -38,23 +51,50 @@ function Chat() {
               <div className={styles.messageContent}>{message.content}</div>
             </div>
           ))}
+          {isLoading && (
+            <div className={`${styles.message} ${styles.assistantMessage}`}>
+              <div className={styles.messageContent}>
+                <span className={styles.typingIndicator}>AI가 입력 중...</span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
-        <div className={styles.inputArea}>
-          <div className={styles.dummyNotice}>
-            🧪 더미 모드: AI 채팅 기능은 Supabase Edge Functions와 OpenAI API 연동 후 사용 가능합니다.
+        {error && (
+          <div className={styles.errorNotice}>
+            <div className={styles.errorTitle}>⚠️ 오류가 발생했습니다</div>
+            <div className={styles.errorMessage}>
+              {error.message?.split('\n').map((line, i) => (
+                <div key={i}>{line}</div>
+              )) || '알 수 없는 오류가 발생했습니다.'}
+            </div>
+            {error.message?.includes('할당량') && (
+              <div className={styles.errorHelp}>
+                💡 도움말: OpenAI 계정에 결제 정보를 추가하거나 할당량을 확인해주세요.
+              </div>
+            )}
           </div>
-          <div className={styles.inputContainer}>
+        )}
+
+        <div className={styles.inputArea}>
+          <form onSubmit={handleSubmit} className={styles.inputContainer}>
             <input
               type="text"
               placeholder="메시지를 입력하세요..."
               className={styles.input}
-              disabled
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              disabled={isLoading}
             />
-            <button className={styles.sendButton} disabled>
-              전송
+            <button
+              type="submit"
+              className={styles.sendButton}
+              disabled={isLoading || !inputMessage.trim()}
+            >
+              {isLoading ? '전송 중...' : '전송'}
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>
