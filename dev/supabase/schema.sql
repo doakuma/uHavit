@@ -44,10 +44,20 @@ CREATE TABLE IF NOT EXISTS habit_checkins (
   UNIQUE(habit_id, checkin_date)
 );
 
--- 4. ai_conversations 테이블 생성 (MVP)
+-- 4. ai_chat_sessions 테이블 생성 (채팅 세션 관리)
+CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  title TEXT, -- 세션 제목 (첫 메시지 또는 사용자 지정)
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 5. ai_conversations 테이블 생성 (MVP)
 CREATE TABLE IF NOT EXISTS ai_conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  session_id UUID REFERENCES ai_chat_sessions(id) ON DELETE CASCADE, -- 세션 ID (NULL 허용: 기존 데이터 호환)
   message_type TEXT NOT NULL, -- 'user', 'assistant'
   content TEXT NOT NULL,
   metadata JSONB, -- 추가 컨텍스트 정보
@@ -62,7 +72,9 @@ CREATE INDEX IF NOT EXISTS idx_habits_user_id ON habits(user_id);
 CREATE INDEX IF NOT EXISTS idx_habits_user_active ON habits(user_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_checkins_habit_date ON habit_checkins(habit_id, checkin_date);
 CREATE INDEX IF NOT EXISTS idx_checkins_date ON habit_checkins(checkin_date);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON ai_chat_sessions(user_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_conversations_user ON ai_conversations(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_conversations_session ON ai_conversations(session_id, created_at);
 
 -- ============================================
 -- Row Level Security (RLS) 정책
@@ -107,6 +119,14 @@ CREATE POLICY "Users can manage own checkins"
       AND habits.user_id = auth.uid()
     )
   );
+
+-- ai_chat_sessions: 사용자는 자신의 세션만 조회/생성/삭제 가능
+ALTER TABLE ai_chat_sessions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can manage own chat sessions" ON ai_chat_sessions;
+CREATE POLICY "Users can manage own chat sessions"
+  ON ai_chat_sessions FOR ALL
+  USING (auth.uid() = user_id);
 
 -- ai_conversations: 사용자는 자신의 대화만 조회/생성 가능
 ALTER TABLE ai_conversations ENABLE ROW LEVEL SECURITY;
@@ -167,4 +187,10 @@ CREATE TRIGGER set_updated_at_habits
 DROP TRIGGER IF EXISTS set_updated_at_checkins ON habit_checkins;
 CREATE TRIGGER set_updated_at_checkins
   BEFORE UPDATE ON habit_checkins
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- ai_chat_sessions 테이블 업데이트 시간 트리거
+DROP TRIGGER IF EXISTS set_updated_at_sessions ON ai_chat_sessions;
+CREATE TRIGGER set_updated_at_sessions
+  BEFORE UPDATE ON ai_chat_sessions
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();

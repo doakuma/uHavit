@@ -18,9 +18,10 @@ const AI_PROVIDER = import.meta.env.VITE_AI_PROVIDER || 'openai';
  * AI와 채팅하는 함수
  * @param {string} message - 사용자 메시지
  * @param {Array} conversationHistory - 대화 기록 (선택사항)
+ * @param {string} sessionId - 세션 ID (선택사항)
  * @returns {Promise<{ response: string, userMessageId: string, assistantMessageId: string }>}
  */
-export async function chatWithAI(message, conversationHistory = []) {
+export async function chatWithAI(message, conversationHistory = [], sessionId = null) {
   if (USE_DUMMY_MODE) {
     // 더미 모드: 간단한 응답 반환
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -51,22 +52,37 @@ export async function chatWithAI(message, conversationHistory = []) {
     throw new Error('로그인이 필요합니다.');
   }
 
+  // 세션이 없으면 새 세션 생성
+  let currentSessionId = sessionId;
+  if (!currentSessionId) {
+    try {
+      const newSession = await createSession();
+      if (!newSession || !newSession.id) {
+        throw new Error('세션 생성에 실패했습니다. 세션 ID를 받지 못했습니다.');
+      }
+      currentSessionId = newSession.id;
+    } catch (error) {
+      console.error('세션 생성 오류:', error);
+      throw new Error(`세션 생성에 실패했습니다: ${error.message}`);
+    }
+  }
+
   // Edge Function 사용 시 (에러 발생하면 클라이언트 직접 호출로 fallback)
   if (USE_EDGE_FUNCTION) {
     try {
-      return await chatWithAIEdgeFunction(message, user.id, conversationHistory);
+      return await chatWithAIEdgeFunction(message, user.id, conversationHistory, currentSessionId);
     } catch (error) {
       console.warn('Edge Function 호출 실패, 클라이언트 직접 호출로 전환:', error);
       // Edge Function이 배포되지 않았거나 에러 발생 시 클라이언트 직접 호출로 fallback
-      return await chatWithAIDirect(message, user.id, conversationHistory);
+      return await chatWithAIDirect(message, user.id, conversationHistory, currentSessionId);
     }
   }
 
   // 클라이언트에서 직접 AI API 호출
   if (AI_PROVIDER === 'gemini') {
-    return await chatWithGemini(message, user.id, conversationHistory);
+    return await chatWithGemini(message, user.id, conversationHistory, currentSessionId);
   }
-  return await chatWithAIDirect(message, user.id, conversationHistory);
+  return await chatWithAIDirect(message, user.id, conversationHistory, currentSessionId);
 }
 
 /**
@@ -74,9 +90,10 @@ export async function chatWithAI(message, conversationHistory = []) {
  * @param {string} message - 사용자 메시지
  * @param {string} userId - 사용자 ID
  * @param {Array} conversationHistory - 대화 기록
+ * @param {string} sessionId - 세션 ID
  * @returns {Promise<{ response: string, userMessageId: string, assistantMessageId: string }>}
  */
-async function chatWithAIEdgeFunction(message, userId, conversationHistory = []) {
+async function chatWithAIEdgeFunction(message, userId, conversationHistory = [], sessionId = null) {
   const { data, error } = await supabase.functions.invoke('ai-chat', {
     body: { message, userId, conversationHistory },
   });
@@ -90,9 +107,10 @@ async function chatWithAIEdgeFunction(message, userId, conversationHistory = [])
  * @param {string} message - 사용자 메시지
  * @param {string} userId - 사용자 ID
  * @param {Array} conversationHistory - 대화 기록
+ * @param {string} sessionId - 세션 ID
  * @returns {Promise<{ response: string, userMessageId: string, assistantMessageId: string }>}
  */
-async function chatWithGemini(message, userId, conversationHistory = []) {
+async function chatWithGemini(message, userId, conversationHistory = [], sessionId = null) {
   // Gemini API 키 확인
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
@@ -178,30 +196,57 @@ async function chatWithGemini(message, userId, conversationHistory = []) {
   const data = await response.json();
   const aiResponse = data.candidates[0]?.content?.parts[0]?.text || '응답을 생성할 수 없습니다.';
 
+  // 세션 ID 유효성 확인 (NULL이 아닌 경우)
+  if (sessionId) {
+    const { data: sessionExists, error: sessionCheckError } = await supabase
+      .from('ai_chat_sessions')
+      .select('id')
+      .eq('id', sessionId)
+      .single();
+    
+    if (sessionCheckError || !sessionExists) {
+      console.error('세션 ID 유효성 확인 실패:', sessionCheckError);
+      throw new Error(`유효하지 않은 세션 ID입니다: ${sessionId}`);
+    }
+  }
+
   // 대화 기록 저장
   const { data: userMsg, error: userError } = await supabase
     .from('ai_conversations')
     .insert({
       user_id: userId,
+      session_id: sessionId,
       message_type: 'user',
       content: message,
     })
     .select()
     .single();
 
-  if (userError) throw userError;
+  if (userError) {
+    console.error('사용자 메시지 저장 오류:', userError);
+    throw userError;
+  }
 
   const { data: assistantMsg, error: assistantError } = await supabase
     .from('ai_conversations')
     .insert({
       user_id: userId,
+      session_id: sessionId,
       message_type: 'assistant',
       content: aiResponse,
     })
     .select()
     .single();
 
-  if (assistantError) throw assistantError;
+  if (assistantError) {
+    console.error('어시스턴트 메시지 저장 오류:', assistantError);
+    throw assistantError;
+  }
+
+  // 세션 제목 업데이트 (첫 메시지인 경우)
+  if (sessionId) {
+    await updateSessionTitle(sessionId, message);
+  }
 
   return {
     response: aiResponse,
@@ -215,9 +260,10 @@ async function chatWithGemini(message, userId, conversationHistory = []) {
  * @param {string} message - 사용자 메시지
  * @param {string} userId - 사용자 ID
  * @param {Array} conversationHistory - 대화 기록
+ * @param {string} sessionId - 세션 ID
  * @returns {Promise<{ response: string, userMessageId: string, assistantMessageId: string }>}
  */
-async function chatWithAIDirect(message, userId, conversationHistory) {
+async function chatWithAIDirect(message, userId, conversationHistory, sessionId = null) {
   // OpenAI API 키 확인
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
   if (!apiKey) {
@@ -289,30 +335,57 @@ async function chatWithAIDirect(message, userId, conversationHistory) {
   const data = await response.json();
   const aiResponse = data.choices[0].message.content;
 
+  // 세션 ID 유효성 확인 (NULL이 아닌 경우)
+  if (sessionId) {
+    const { data: sessionExists, error: sessionCheckError } = await supabase
+      .from('ai_chat_sessions')
+      .select('id')
+      .eq('id', sessionId)
+      .single();
+    
+    if (sessionCheckError || !sessionExists) {
+      console.error('세션 ID 유효성 확인 실패:', sessionCheckError);
+      throw new Error(`유효하지 않은 세션 ID입니다: ${sessionId}`);
+    }
+  }
+
   // 대화 기록 저장
   const { data: userMsg, error: userError } = await supabase
     .from('ai_conversations')
     .insert({
       user_id: userId,
+      session_id: sessionId,
       message_type: 'user',
       content: message,
     })
     .select()
     .single();
 
-  if (userError) throw userError;
+  if (userError) {
+    console.error('사용자 메시지 저장 오류:', userError);
+    throw userError;
+  }
 
   const { data: assistantMsg, error: assistantError } = await supabase
     .from('ai_conversations')
     .insert({
       user_id: userId,
+      session_id: sessionId,
       message_type: 'assistant',
       content: aiResponse,
     })
     .select()
     .single();
 
-  if (assistantError) throw assistantError;
+  if (assistantError) {
+    console.error('어시스턴트 메시지 저장 오류:', assistantError);
+    throw assistantError;
+  }
+
+  // 세션 제목 업데이트 (첫 메시지인 경우)
+  if (sessionId) {
+    await updateSessionTitle(sessionId, message);
+  }
 
   return {
     response: aiResponse,
@@ -370,11 +443,84 @@ ${recentCheckins.length > 0 ? JSON.stringify(recentCheckins.slice(0, 20), null, 
 }
 
 /**
- * 대화 기록 조회
- * @param {number} limit - 조회할 메시지 수 (기본값: 50)
+ * 대화 기록 조회 (세션별)
+ * @param {string} sessionId - 세션 ID (null이면 모든 메시지)
+ * @param {number} limit - 조회할 메시지 수 (기본값: 100)
  * @returns {Promise<Array>} 대화 기록 배열
  */
-export async function getConversations(limit = 50) {
+export async function getConversations(sessionId = null, limit = 100) {
+  if (USE_DUMMY_MODE) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return [];
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  let query = supabase
+    .from('ai_conversations')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(limit);
+
+  if (sessionId) {
+    query = query.eq('session_id', sessionId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * 채팅 세션 생성
+ * @param {string} title - 세션 제목 (선택사항)
+ * @returns {Promise<{ id: string, title: string, created_at: string }>}
+ */
+export async function createSession(title = null) {
+  if (USE_DUMMY_MODE) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return {
+      id: `session-${Date.now()}`,
+      title: title || '새 대화',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  const { data, error } = await supabase
+    .from('ai_chat_sessions')
+    .insert({
+      user_id: user.id,
+      title: title || '새 대화',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * 채팅 세션 목록 조회
+ * @returns {Promise<Array>} 세션 목록 배열
+ */
+export async function getSessions() {
   if (USE_DUMMY_MODE) {
     await new Promise((resolve) => setTimeout(resolve, 200));
     return [];
@@ -389,12 +535,66 @@ export async function getConversations(limit = 50) {
   }
 
   const { data, error } = await supabase
-    .from('ai_conversations')
+    .from('ai_chat_sessions')
     .select('*')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
-    .limit(limit);
+    .order('updated_at', { ascending: false });
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * 채팅 세션 삭제
+ * @param {string} sessionId - 세션 ID
+ * @returns {Promise<void>}
+ */
+export async function deleteSession(sessionId) {
+  if (USE_DUMMY_MODE) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  const { error } = await supabase
+    .from('ai_chat_sessions')
+    .delete()
+    .eq('id', sessionId)
+    .eq('user_id', user.id);
+
+  if (error) throw error;
+}
+
+/**
+ * 세션 제목 업데이트 (첫 메시지 기반)
+ * @param {string} sessionId - 세션 ID
+ * @param {string} firstMessage - 첫 메시지
+ * @returns {Promise<void>}
+ */
+async function updateSessionTitle(sessionId, firstMessage) {
+  if (USE_DUMMY_MODE) return;
+
+  // 세션에 메시지가 하나만 있으면 제목 업데이트
+  const { data: messages } = await supabase
+    .from('ai_conversations')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('message_type', 'user');
+
+  if (messages && messages.length === 1) {
+    // 첫 메시지의 앞부분을 제목으로 사용 (최대 50자)
+    const title = firstMessage.length > 50 ? firstMessage.substring(0, 50) + '...' : firstMessage;
+    
+    await supabase
+      .from('ai_chat_sessions')
+      .update({ title, updated_at: new Date().toISOString() })
+      .eq('id', sessionId);
+  }
 }

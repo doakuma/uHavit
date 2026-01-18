@@ -1,0 +1,1 @@
+export { CheckinHistory } from './CheckinHistory';
