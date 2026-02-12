@@ -1,0 +1,27 @@
+[project]
+name = "uhavit"
+version = "0.1.0"
+description = "Habit-building AI agent (local-first MVP)"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "uHavit Contributors" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+uhavit = "uhavit.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.24.0"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
